@@ -148,7 +148,7 @@ Congratulations. You did your first piping. A few features worth noting:
 - `dplyr` *DOES NOT* need quoting column names (but doesn't mind if you quote either). It may be confusing at first, but it allows to work quicker, and avoids filling up your code with distracting elements.  
 \newline
 
-It can be tedious to explicitly specify all the column names to select. `dplyr` is the best friend of lazy people, and provide a quicker way for selection multiple columns.
+It can be tedious to explicitly specify all the column names to select. `dplyr` is the best friend of lazy people, and provide a quicker way for selecting multiple columns.
 ```{r}
 dat2 <- dat %>% 
   bind_rows() %>% 
@@ -162,7 +162,7 @@ See how we used the function `everything` to select all the remaining columns (w
 ### Create a map of data
 We are now ready to plot these points on a map. 
 The map of the worls here derives from the package `rnaturalearth`. Plotting is done using `ggplot` another important member of the `tidyverse`. Spatial data are handled using the `sf` library. All very cool stuff that we don't discuss here.
-```{r, message=F, warning=F, eval=F}
+```{r, message=F, warning=F}
 countries <- ne_countries(returnclass = "sf") %>% 
   st_geometry()
 
@@ -179,7 +179,7 @@ dat_clean <- dat_clean %>%
 ```
 
 ### Extract predictors from global datasets
-Imagine we are interesting in calculating some metrics related to the environmental niche of the five cute cat species. Do do spatial operations, we need to transform our dataset into a `SpatialPointDataFrame`. 
+Imagine we are interesting in calculating some metrics related to the environmental niche of the five cute cat species. To do spatial operations, we need to transform our dataset into a `SpatialPointDataFrame`. 
 ```{r}
 dat.shp <- SpatialPointsDataFrame(coords=dat_clean %>% 
                                     dplyr::select(Lon, Lat), 
@@ -251,7 +251,9 @@ niche %>%
   arrange(desc(max.T))
 ```
 To sort in ascending order, it's enough to do `arrange(niche, max.T)`.  
-You, fine ecologists, may be unhappy of the unequal sample size in our data. How would the result change if we were using only one randomly selected observations for each species in each country?  
+\newline
+
+You, fine ecologists, may be unhappy of the unequal sample size in our data. How would the results change if we were using only one randomly selected observations for each species in each country?  
 Easy-peasy.  
 All we need to do is to group our data by both species AND country, and then we can take advantage of a bunch of useful commands which subset our dataset by selecting only a set of rows. Check `slice`, `sample_n`, `sample_frac`.
 ```{r}
@@ -260,6 +262,9 @@ envdata %>%
   sample_n(1, replace=F) %>% 
   head()
 ```
+`sample_n` randomly samples n rows for each group.  
+\newline 
+
 Note that many `base` functions useful for checking the shape of your dataset work also when put in the pipe. Try for instance to add at the end of your pipe the commands `nrow`, `ncol`, `dim`, `class`, `str`, `head`, `summary`.  
 \newline
 
@@ -286,7 +291,7 @@ Cool. This is it. Now you know the basics and you can start navigating on your o
 ### Slighlty more advanced stuff
 The power of `dplyr` is that you can really make your data management workflow more general, by writing your code more programmatically. We are only touching this argument here, but I want to introduce you to two cool families of functions.
 
-*Joins*
+*Joins*  
 Often, we need to join information based on two or more data.frames, based on a common field. `dplyr` has the whole family of join functions which we can use: `left_join`, `right_join`, `full_join`, `inner_join`. Here I just show one simple application.  
 Let's say we want to standardize the Temperature values of each individual observation, by the maximum Temperature we calculated for each cute cat species. Basically, we need to join our  `envdata` object with our `niche` object, using `species` as key.
 ```{r}
@@ -299,7 +304,7 @@ head(envdata.st)
 ```
 Notice how we nested a pipe within a pipe!
 
-Not everybody knows, you can join an object with itself using the point `.`. In `dplyr` grammar the point `.` sign symbolizes 'iteself' and it's use is widespread. In the next example we first calculate the maximum temperature, species by species, and then join these summarizes values to the `envdata` object
+Not everybody knows, you can join an object with itself using the point `.`. In `dplyr` grammar the point `.` sign symbolizes 'itself' and its use is widespread. In the next example we first calculate the maximum temperature, species by species, and then join these summarized values to the `envdata` object
 
 ```{r}
 envdata.st <- envdata %>%
@@ -324,9 +329,9 @@ head(envdata2)
 Three versions for the same task. Which one is easier to read?  
 \newline
 
-*_at & _all* family  
-All basic functions in `dplyr` have an `x_at` and an `x_all` version. This helps **enormously** to script in a more general and programmatical.  
-Remember when we summarized temperature and precipitation to get min, mean and max? Actually, our code had some redundancy that a `dplyr` would never accept. Imagine we have to calculate summaries for all the 18 bioclim variables in Chelsa. Should we repeat the same lines 18 times?  
+*`_at` & `_all` family*  
+All basic functions in `dplyr` have an `x_at` and an `x_all` version. This helps **enormously** to script in a more general and programmatical fashion.  
+Remember when we summarized temperature and precipitation to get min, mean and max? Actually, our code had some redundancy that a `dplyr` would never accept, since we needed to specify the same functions for each of the variables we wanted to calculate those functions on. Imagine we have to calculate summaries for all the 18 bioclim variables in Chelsa. Should we repeat the functions we want 18 times?  
 NO!!  
 We can simply use the function `summarize_at`. The grammar is slighlty more complicated, but discloses a world of opportunities.
 ```{r}
@@ -338,7 +343,7 @@ niche <- envdata %>%
                           max=~max(., na.rm=T)))
 niche
 ```
-Awesome! Not only we summarized ove both variables, but we also got columns having the correct naming. HOW COOL IS THAT?  
+Awesome! Not only we summarized over both variables, but we also got columns having the correct naming. HOW COOL IS THAT?  
 Spend a minute looking at the syntax of `summarize_at`. Not exactly simple, with those point `.` and tilde `~` signs. Definitely worth learning, though.  
 \newline
 
@@ -351,19 +356,11 @@ niche.log <- niche %>%
             .funs=list(~log(.)))
 niche.log
 ```
-Notice that, not defining new names in the `.funs` argument, we are not overwriting the variables that we selected in the `.vars` argument. The function `starts_with` (and its companions `ends_with`, `contain`), are cool helper functions especially though for selecting columns (which means they can also be used when using the `select` function)
+Notice that, not defining new names in the `.funs` argument, we are not overwriting the variables that we selected in the `.vars` argument. The function `starts_with` (and its companions `ends_with`, `contain`), are cool helper functions specifically thought for selecting columns (which means they can also be used when using the `select` function).  
+\newline
 
+\newline
 
-
-
-
-
-
-
-
-
-
-
-
+Enough for today. We only scratched the surface here, but I'm sure you saw the huge potential for writing quicker and cleaner code compared to `base R`. Now you know the power of `dplyr`. Will you be able to harness it?
 
 
