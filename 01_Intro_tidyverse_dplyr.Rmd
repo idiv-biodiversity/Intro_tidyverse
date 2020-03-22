@@ -21,7 +21,7 @@ The overarching goals of this tutorial is to fall in love with `dplyr` and to se
 - Simulate a `dplyr` based workflow  
 \newline
 
-You will learn how to use the key verbs of `dplyr`, including `select`, `filter`, `mutate`, `summarize`, `rename`, as well as their generalized `x_at` and `x_all` versions. We'll also touch on the `join` family of functions.  
+You will learn how to use the key verbs of `dplyr`, including `select()`, `filter()`, `mutate()`, `summarize()`, `rename()`, as well as their generalized `x_at()` and `x_all()` versions. We'll also touch on the `join` family of functions.  
 
 \newline
 
@@ -44,10 +44,6 @@ library(sf)
 library(rgeos)
 library(raster)
 library(rnaturalearth)
-#library(rworldmap)
-
-
-#library(elevatr)
 
 #save temporary files
 write("TMPDIR = _tmp", file=file.path(Sys.getenv('TMPDIR'), '.Renviron'))
@@ -99,7 +95,7 @@ knitr::kable(dat[[1]][1:10,],
 ```
 
 It's pretty horrible, and there's a lot of information we probably do not need. 
-First, notice that each element of the list is a `tibble`, which is the `dplyr` equivalent of a `data.frame`. It has some cool tweaks (try to visualize a tibble in your console) compared to a data.frame. You  should be aware, though, that some functions designed for data.frames may not work with tibbles. Try converting back and forth from data.frame to tbl with the commands `as.data.frame` and `as.tbl`  
+First, notice that each element of the list is a `tibble`, which is the `dplyr` equivalent of a `data.frame`. It has some cool tweaks (try to visualize a tibble in your console) compared to a data.frame. You  should be aware, though, that some functions designed for data.frames may not work with tibbles. Try converting back and forth from data.frame to tbl with the commands `as.data.frame()` and `as.tbl()`.  
 \newline
 
 ### Clean data
@@ -142,9 +138,9 @@ head(dat_clean)
 ```
 Shorter, cleaner, easier.  
 Congratulations. You did your first piping. A few features worth noting:  
-- In the first row, we assign the output to the object `dat_clean` and select `dat` as initial input of our chain of commands. The object `dat` will be fed into the first function (`bind_rows`). The output from the first function will be fed as first argument in the second function (`select`) and so on  
-- `bind_rows` is a pretty powerful alternative to rbind, which has the desirable properties of binding rows only when these have the same column name (!), which avoids us having to select columns separately for each element of the `dat` list in a loop    
-- For the function `select` I specified the package because there's a conflict with the `raster::select` function. When doing spatial analysis, it's more robust to consistently specifiy the package when conflicts may exist  
+- In the first row, we assign the output to the object `dat_clean` and select `dat` as initial input of our chain of commands. The object `dat` will be fed into the first function (`bind_rows()`). The output from the first function will be fed as first argument in the second function (`select()`) and so on  
+- `bind_rows()` is a pretty powerful alternative to rbind, which has the desirable properties of binding rows only when these have the same column name (!), which avoids us having to select columns separately for each element of the `dat` list in a loop    
+- For the function `select()` I specified the package because there's a conflict with the `raster::select()` function. When doing spatial analysis, it's more robust to consistently specifiy the package when conflicts may exist  
 - `dplyr` *DOES NOT* need quoting column names (but doesn't mind if you quote either). It may be confusing at first, but it allows to work quicker, and avoids filling up your code with distracting elements.  
 \newline
 
@@ -154,12 +150,12 @@ dat2 <- dat %>%
   bind_rows() %>% 
   dplyr::select(kingdom:species, year:day, country, decimalLongitude, decimalLatitude, everything())
 ```
-See how we used the function `everything` to select all the remaining columns (which can be really useful when we are simply changing the order of our columns)
+See how we used the function `everything()` to select all the remaining columns (which can be really useful when we are simply changing the order of our columns)
 
 
 
 
-### Create a map of data
+### Create a map of the data
 We are now ready to plot these points on a map. 
 The map of the worls here derives from the package `rnaturalearth`. Plotting is done using `ggplot` another important member of the `tidyverse`. Spatial data are handled using the `sf` library. All very cool stuff that we don't discuss here.
 ```{r, message=F, warning=F}
@@ -172,6 +168,8 @@ ggplot() +
   geom_point(data=dat_clean, aes(x=Lon, y=Lat, col=species)) +
   theme_bw() 
 ```
+\newline
+
 There's a point for the Sand cat which is clearly out of the species native range. We delete it.
 ```{r}
 dat_clean <- dat_clean %>% 
@@ -179,7 +177,7 @@ dat_clean <- dat_clean %>%
 ```
 
 ### Extract predictors from global datasets
-Imagine we are interesting in calculating some metrics related to the environmental niche of the five cute cat species. To do spatial operations, we need to transform our dataset into a `SpatialPointDataFrame`. 
+Imagine we are interesting in calculating some metrics related to the environmental niche of the five cute cat species. To do spatial operations, we need to transform our dataset into a `SpatialPointDataFrame()`. 
 ```{r}
 dat.shp <- SpatialPointsDataFrame(coords=dat_clean %>% 
                                     dplyr::select(Lon, Lat), 
@@ -227,10 +225,10 @@ envdata <- dat_clean %>%
   mutate(P=bio12) %>% 
   mutate(Temp=Temp/10)
 ```
-The function `mutate` is a fundamental one. It allows creating and modifying a column, and can be used to do operations between columns.  
+The function `mutate()` is a fundamental one. It allows creating and modifying a column, and can be used to do operations between columns.  
 \newline
 
-Now things get interesting. To calculate the climatic niche we may want to calculate some statistics for each predictor for species (min, max, mean). `dplyr` comes to our help with the function `group_by` (and it's opposite `ungroup`). Once you group a data.frame by a factor (or character!), all operations are applied on a group by group basis. Easy, quick, efficient. We can then use the function `summarize`.
+Now things get interesting. To calculate the climatic niche we may want to calculate some statistics for each predictor for species (min, max, mean). `dplyr` comes to our help with the function `group_by()` (and its opposite `ungroup()`). Once you group a data.frame by a factor (or character!), all operations are applied on a group by group basis. Easy, quick, efficient. We can then use the function `summarize()`.
 ```{r}
 niche <- envdata %>% 
   group_by(species) %>% 
@@ -245,7 +243,7 @@ niche <- envdata %>%
 Checkout how we used the function `n()` to count the number of observations for each group!.  
 \newline
 
-How do our cute cats rank in terms of their resistance to maximum temperature? All we have to do is to `arrange` our rows in a descending order.
+How do our cute cats rank in terms of their resistance to maximum temperature? All we have to do is to `arrange()` our rows in a descending order.
 ```{r}
 niche %>% 
   arrange(desc(max.T))
@@ -255,7 +253,7 @@ To sort in ascending order, it's enough to do `arrange(niche, max.T)`.
 
 You, fine ecologists, may be unhappy of the unequal sample size in our data. How would the results change if we were using only one randomly selected observations for each species in each country?  
 Easy-peasy.  
-All we need to do is to group our data by both species AND country, and then we can take advantage of a bunch of useful commands which subset our dataset by selecting only a set of rows. Check `slice`, `sample_n`, `sample_frac`.
+All we need to do is to group our data by both species AND country, and then we can take advantage of a bunch of useful commands which subset our dataset by selecting only a set of rows. Check `slice()`, `sample_n()`, `sample_frac()`.
 ```{r}
 envdata %>% 
   group_by(species, country) %>% 
@@ -265,10 +263,10 @@ envdata %>%
 `sample_n` randomly samples n rows for each group.  
 \newline 
 
-Note that many `base` functions useful for checking the shape of your dataset work also when put in the pipe. Try for instance to add at the end of your pipe the commands `nrow`, `ncol`, `dim`, `class`, `str`, `head`, `summary`.  
+Note that many `base` functions useful for checking the shape of your dataset work also when put in the pipe. Try for instance to add at the end of your pipe the commands `nrow()`, `ncol()`, `dim()`, `class()`, `str()`, `head()`, `summary()`.  
 \newline
 
-Often, you have the need to delete duplicated rows in your dataset. Let's say we want to count the number of countries we have data for, separately for each cute cat. Our best friend is the command `distinct`
+Often, you have the need to delete duplicated rows in your dataset. Let's say we want to count the number of countries we have data for, separately for each cute cat. Our best friend is the command `distinct()`
 ```{r}
 ncountries <- envdata %>% 
   group_by(species) %>% 
@@ -279,7 +277,7 @@ ncountries <- envdata %>%
 \newline
 
 
-Transforming all your scripts to `dplyr` grammar may be challenging at first. Sometimes you want to extract one column from a dataframe and use it as a vector. You can obviously run your pipe, and then subset the output using the `$` sign, as usual. A real `dplyr` feticist would never do it, though, but rather use `pull`.  
+Transforming all your scripts to `dplyr` grammar may be challenging at first. Sometimes you want to extract one column from a dataframe and use it as a vector. You can obviously run your pipe, and then subset the output using the `$` sign, as usual. A real `dplyr` feticist would never do it, though, but rather use `pull()`.  
 Let's say we want to extract the string of countries we have data for (altogehter, this time, not separately by species) 
 ```{r}
 envdata %>% 
@@ -292,8 +290,8 @@ Cool. This is it. Now you know the basics and you can start navigating on your o
 The power of `dplyr` is that you can really make your data management workflow more general, by writing your code more programmatically. We are only touching this argument here, but I want to introduce you to two cool families of functions.
 
 *Joins*  
-Often, we need to join information based on two or more data.frames, based on a common field. `dplyr` has the whole family of join functions which we can use: `left_join`, `right_join`, `full_join`, `inner_join`. Here I just show one simple application.  
-Let's say we want to standardize the Temperature values of each individual observation, by the maximum Temperature we calculated for each cute cat species. Basically, we need to join our  `envdata` object with our `niche` object, using `species` as key.
+Often, we need to join information based on two or more data.frames, based on a common field. `dplyr` has the whole family of join functions which we can use: `left_join()`, `right_join()`, `full_join()`, `inner_join()`. Here I just show one simple application.  
+Let's say we want to standardize the Temperature values of each individual observation, by the maximum Temperature we calculated for each cute cat species. Basically, we need to join our `envdata` object with our `niche` object, using `species` as key.
 ```{r}
 envdata.st <- envdata %>% 
   left_join(niche %>% 
@@ -330,10 +328,10 @@ Three versions for the same task. Which one is easier to read?
 \newline
 
 *`_at` & `_all` family*  
-All basic functions in `dplyr` have an `x_at` and an `x_all` version. This helps **enormously** to script in a more general and programmatical fashion.  
+All basic functions in `dplyr` have an `x_at()` and an `x_all()` version. This helps **enormously** to script in a more general and programmatical fashion.  
 Remember when we summarized temperature and precipitation to get min, mean and max? Actually, our code had some redundancy that a `dplyr` would never accept, since we needed to specify the same functions for each of the variables we wanted to calculate those functions on. Imagine we have to calculate summaries for all the 18 bioclim variables in Chelsa. Should we repeat the functions we want 18 times?  
 NO!!  
-We can simply use the function `summarize_at`. The grammar is slighlty more complicated, but discloses a world of opportunities.
+We can simply use the function `summarize_at()`. The grammar is slighlty more complicated, but discloses a world of opportunities.
 ```{r}
 niche <- envdata %>% 
   group_by(species) %>% 
@@ -344,7 +342,7 @@ niche <- envdata %>%
 niche
 ```
 Awesome! Not only we summarized over both variables, but we also got columns having the correct naming. HOW COOL IS THAT?  
-Spend a minute looking at the syntax of `summarize_at`. Not exactly simple, with those point `.` and tilde `~` signs. Definitely worth learning, though.  
+Spend a minute looking at the syntax of `summarize_at()`. Not exactly simple, with those point `.` and tilde `~` signs. Definitely worth learning, though.  
 \newline
 
 If it's not yet enough, let's look at another application of the `_at` family.  
@@ -356,9 +354,7 @@ niche.log <- niche %>%
             .funs=list(~log(.)))
 niche.log
 ```
-Notice that, not defining new names in the `.funs` argument, we are not overwriting the variables that we selected in the `.vars` argument. The function `starts_with` (and its companions `ends_with`, `contain`), are cool helper functions specifically thought for selecting columns (which means they can also be used when using the `select` function).  
-\newline
-
+Notice that, not defining new names in the `.funs` argument, we are not overwriting the variables that we selected in the `.vars` argument. The function `starts_with()` (and its companions `ends_with()`, `contain()`), are cool helper functions specifically thought for selecting columns (which means they can also be used when using the `select()` function).  
 \newline
 
 Enough for today. We only scratched the surface here, but I'm sure you saw the huge potential for writing quicker and cleaner code compared to `base R`. Now you know the power of `dplyr`. Will you be able to harness it?
