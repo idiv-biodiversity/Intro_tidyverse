@@ -56,27 +56,57 @@ As a toy dataset, we will compare the climatic niche of the five cutest wild cat
 \newline
 
 
-SPOILER:  
-The winner is...  
-<center>
-  ![](`r "https://upload.wikimedia.org/wikipedia/commons/b/bd/Margay_in_Costa_Rica.jpg"`)  
-</center>
-  
-*the Margay!* (Source: [Wikipedia](https://en.wikipedia.org/wiki/Margay))  
-\newline 
-
-\newline  
-
-Define our set of species and download occurrences from `GBIF`
-
+Let's get familiar with our cute cats. We first create a data.frame of names, short names and urls to retrieve pictures of our cute cats:
 ```{r}
-myspecies <- c("Otocolobus manul", #Palla's cat
+myspecies <- c("Felis manul", #Palla's cat
                "Caracal caracal", #Caracal
                "Felis margarita", #Sand cat
                "Prionailurus rubiginosus", #Rusty spotted cat
                "Leopardus wiedii" #Margay
                )
-shortnames <- c("Pallas", "Caracal", "Sand", "Rusty", "Margay")
+shortnames <- c("Palla's cat", "Caracal", "Sand Cat", "Rusty Spotted Cat", "Margay")
+urls <- c("https://upload.wikimedia.org/wikipedia/commons/d/d6/Manoel.jpg", #pallas
+          "https://upload.wikimedia.org/wikipedia/commons/a/a3/Caracl_%2801%29%2C_Paris%2C_d%C3%A9cembre_2013.jpg", #caracal
+          "https://upload.wikimedia.org/wikipedia/commons/e/e9/Persian_sand_CAT.jpg", #Sand cat
+          "https://upload.wikimedia.org/wikipedia/commons/3/3e/Rusty_spotted_cat_1.jpg", #Rusty spotted cat
+          "https://upload.wikimedia.org/wikipedia/commons/b/bd/Margay_in_Costa_Rica.jpg")
+
+cute <- data.frame(species=myspecies, 
+                   short=shortnames, 
+                   url=urls)
+```
+
+
+
+
+```{r, message=F, echo=F, warning=F}
+library(cowplot)
+library(magick)
+
+Pallas <- ggdraw() + draw_image(urls[1], scale = 0.9) + 
+  draw_figure_label(label = "Palla's cat")
+Caracal <- ggdraw() + draw_image(urls[2], scale = 0.9) + 
+  draw_figure_label(label = "Caracal")
+Sand <- ggdraw() + draw_image(urls[3], scale = 0.9) + 
+  draw_figure_label(label = "Sand cat")
+Rusty <- ggdraw() + draw_image(urls[4], scale = 0.9) + 
+  draw_figure_label(label = "Rusty Spotted cat")
+Margay <- ggdraw() + draw_image(urls[5], scale = 0.7) + 
+  draw_figure_label(label = "Margay")
+
+plot_grid( 
+  plot_grid(Pallas, Caracal, nrow=1, align="v"), 
+  plot_grid(Sand, Rusty, Margay, nrow=1, rel_heights=c(1,1, 0.5)), 
+  nrow=2, rel_heights = c(1, 1.5))
+```
+\newline 
+
+*All pictures are from https://en.wikipedia.org/*
+\newline  
+
+Download occurrence data from `GBIF`
+
+```{r}
 get.speciesKey <- function(x){name_backbone(x)$speciesKey} #get GBIF species key
 key <- unlist(lapply(myspecies, get.speciesKey))
 get.100occurrences <- function(x){occ_search(taxonKey=x, return="data", limit=100)}
@@ -85,7 +115,7 @@ dat <- lapply(key, get.100occurrences)
 ```
 
 
-We produce a list of 5 elements, each with up to 100 occurrences for a cat. Let's take a look at the output:
+We produce a list of 5 elements, each with up to 100 occurrences for a cat species. Let's take a look at the output:
 
 ```{r, echo=F}
 knitr::kable(dat[[1]][1:10,], 
@@ -108,7 +138,7 @@ Let's see how `dplyr` can help us to clean up our data into something we can wor
 
 We'll do this through piping  
 
-The command pipe ` %>%` (shortcut in RStudio: `Ctrl + Shift + m`) allows to use the output of a previous function as the input of the following. This means we can avoid a *lot* redundancy in our code.  
+The command pipe `%>%` allows to use the output of a previous function as the input of the following. This means we can avoid a *lot* redundancy in our code. (Do yourself a favour and memorize the RStudio shortcut: `Ctrl + Shift + m`)  
 \newline
 
 Let's compare the code in `base` vs. the code in `dplyr`.
@@ -118,10 +148,12 @@ Let's compare the code in `base` vs. the code in `dplyr`.
 #Since each element of the list has a different number of columns, I cannot simply bind them by rows, but I first need to subset them to the same format.
 dat_clean <- NULL
 for(i in 1:5){
-  dat_clean <- rbind(dat_clean, dat[[i]][,which(colnames(dat[[i]]) %in%  
-                                                  c("species", "country", "decimalLongitude", "decimalLatitude"))])
-}
-dat_clean <- dat_clean[which(!is.na(dat_clean$decimalLatitude) & !is.na(dat_clean$decimalLongitude)),]
+  dat_clean <- rbind(dat_clean, 
+                     dat[[i]][,which(colnames(dat[[i]]) %in% 
+                                       c("species", "country", "decimalLongitude", "decimalLatitude"))])
+  }
+dat_clean <- dat_clean[which(!is.na(dat_clean$decimalLatitude) & 
+                               !is.na(dat_clean$decimalLongitude)),]
 colnames(dat_clean)[2:3] <- c("Lat", "Lon")
 dat_clean <- dat_clean[,c(1,4,3,2)] #reorder columns
 head(dat_clean)
@@ -218,7 +250,7 @@ bio12.raster <- raster("Ancillary_Data/CHELSA/CHELSA_bio10_12.tif")
 bio01 <- raster::extract(bio01.raster, dat.shp) # °C * 10
 bio12 <- raster::extract(bio12.raster, dat.shp) # mm
 ```
-Bind columns and transform temperature data (They are multiplied by 10 to be stored as integers). 
+Bind columns and transform temperature data (they are multiplied by 10 so that they can be stored as integers). 
 ```{r}
 envdata <- dat_clean %>% 
   mutate(Temp=bio01) %>% 
@@ -241,6 +273,7 @@ niche <- envdata %>%
             max.P=max(P, na.rm=T))
 ```
 Checkout how we used the function `n()` to count the number of observations for each group!.  
+*TIP* Once you group a `tibble` it stays grouped! Don't forget to ungroup afterwards!  
 \newline
 
 How do our cute cats rank in terms of their resistance to maximum temperature? All we have to do is to `arrange()` our rows in a descending order.
@@ -252,7 +285,12 @@ To sort in ascending order, it's enough to do `arrange(niche, max.T)`.
 \newline
 
 You, fine ecologists, may be unhappy of the unequal sample size in our data. How would the results change if we were using only one randomly selected observations for each species in each country?  
+\newline 
+
 Easy-peasy.  
+\newline 
+
+
 All we need to do is to group our data by both species AND country, and then we can take advantage of a bunch of useful commands which subset our dataset by selecting only a set of rows. Check `slice()`, `sample_n()`, `sample_frac()`.
 ```{r}
 envdata %>% 
@@ -260,10 +298,10 @@ envdata %>%
   sample_n(1, replace=F) %>% 
   head()
 ```
-`sample_n` randomly samples n rows for each group.  
+`sample_n()` randomly samples n rows for each group. `slice(1:n)` can be used to subset the dataset by row numbers  
 \newline 
 
-Note that many `base` functions useful for checking the shape of your dataset work also when put in the pipe. Try for instance to add at the end of your pipe the commands `nrow()`, `ncol()`, `dim()`, `class()`, `str()`, `head()`, `summary()`.  
+Note that many `base` functions useful for checking the shape of your dataset work also inside pipes. Try for instance to add the commands `nrow()`, `ncol()`, `dim()`, `class()`, `str()`, `head()`, `summary()` at the end of your pipe .  
 \newline
 
 Often, you have the need to delete duplicated rows in your dataset. Let's say we want to count the number of countries we have data for, separately for each cute cat. Our best friend is the command `distinct()`
@@ -273,7 +311,7 @@ ncountries <- envdata %>%
   distinct(country) %>% 
   summarize(n=n())
 ```
-!! watch out. By using `distinct` you effectively use (and retain) only the information in the column(s) you are using `distinct` on. If you want to retain the information in the other columns, try `distinct(country, .keep_all=T)`.  
+!! *watch out* !! By using `distinct` you effectively use (and retain) only the information in the column(s) you are using `distinct` on. If you want to retain the information in the other columns, try `distinct(country, .keep_all=T)`.  
 \newline
 
 
@@ -285,11 +323,26 @@ envdata %>%
   pull(country)
 ```
 Cool. This is it. Now you know the basics and you can start navigating on your own.
+\newline 
+
+### Your turn (1)
+Ready to answer some cute-cat related questions based on our data?  
+\newline
+
+**1) What cute cat has the widest range in term of precipitation?**  
+**2) Which countries host the highest number of different species of cats?**  
+**3) Which species occur in the countries from Q2 (pick up one)?**  
+**3b) BONUS POINT - Can you extract the species for all countries from Q2 within the same pipeline?**  
+\newline
+
+OBVIOUSLY - you can only answer these questions using the `dplyr` functions showed so far in *ONE* single pipeline. Data in, data out. You find the solutions at the end of the document.
+
+
 
 ### Slighlty more advanced stuff
 The power of `dplyr` is that you can really make your data management workflow more general, by writing your code more programmatically. We are only touching this argument here, but I want to introduce you to two cool families of functions.
 
-*Joins*  
+#### *Joins*  
 Often, we need to join information based on two or more data.frames, based on a common field. `dplyr` has the whole family of join functions which we can use: `left_join()`, `right_join()`, `full_join()`, `inner_join()`. Here I just show one simple application.  
 Let's say we want to standardize the Temperature values of each individual observation, by the maximum Temperature we calculated for each cute cat species. Basically, we need to join our `envdata` object with our `niche` object, using `species` as key.
 ```{r}
@@ -327,7 +380,7 @@ head(envdata2)
 Three versions for the same task. Which one is easier to read?  
 \newline
 
-*`_at` & `_all` family*  
+#### *`_at` & `_all` family*  
 All basic functions in `dplyr` have an `x_at()` and an `x_all()` version. This helps **enormously** to script in a more general and programmatical fashion.  
 Remember when we summarized temperature and precipitation to get min, mean and max? Actually, our code had some redundancy that a `dplyr` would never accept, since we needed to specify the same functions for each of the variables we wanted to calculate those functions on. Imagine we have to calculate summaries for all the 18 bioclim variables in Chelsa. Should we repeat the functions we want 18 times?  
 NO!!  
@@ -357,6 +410,70 @@ niche.log
 Notice that, not defining new names in the `.funs` argument, we are not overwriting the variables that we selected in the `.vars` argument. The function `starts_with()` (and its companions `ends_with()`, `contain()`), are cool helper functions specifically thought for selecting columns (which means they can also be used when using the `select()` function).  
 \newline
 
+### Your turn (2)
+**4) Attach to the `envdata` object both the short names and picture urls from the object `cute`. Find the cat with the second highest number of occurrences, use the corresponding url to draw its picture, and the short name for the label (see code for plotting)**  
+**5) How can you use the function `rename_all` to add the prefix "cute" to all column names in `envdata`?**  
+\newline
+
+Q4-hint - Check what happens when doing `left_join` first and then `summarize`, or the other way around. Is the result the same?  
+Q5-hint - Take a look at the `summarize_at` example above. If you rename *all* fields, do you really need to specify the argument .vars?  
+```{r, eval=F}
+ggdraw() + draw_image("myurl") + draw_figure_label("mylabel")
+```
+
+
+
+
 Enough for today. We only scratched the surface here, but I'm sure you saw the huge potential for writing quicker and cleaner code compared to `base R`. Now you know the power of `dplyr`. Will you be able to harness it?
+
+\newpage
+### Solutions
+```{r}
+#Question 1
+niche %>% 
+  mutate(range.P=P_max-P_min) %>% 
+  arrange(desc(range.P)) %>% 
+  slice(1) %>% 
+  pull(species)
+#Question 2
+topcountries <- dat_clean %>% 
+  group_by(country) %>% 
+  distinct(species) %>% 
+  summarize(n=n()) %>% 
+  arrange(desc(n)) %>% 
+  filter(n>1) %>% 
+  pull(country)
+topcountries
+#Question3
+dat_clean %>% 
+  filter(country == topcountries[1]) %>% 
+  distinct(species) %>%
+  pull(species)
+#Questio3b
+dat_clean %>% 
+  filter(country %in% topcountries) %>% 
+  distinct(country, species) %>% 
+  arrange(country)
+```
+
+```{r}
+#Question 4 
+second.most.common <- envdata %>% 
+  group_by(species) %>% 
+  summarize(n=n()) %>% 
+  left_join(cute, by="species") %>% 
+  mutate(url=as.character(url)) %>% 
+  arrange(desc(n)) %>% 
+  ungroup() %>% 
+  slice(2)
+
+ggdraw() + 
+  draw_image(second.most.common %>% pull(url), scale=0.5) + 
+  draw_figure_label(second.most.common %>% pull(short))
+
+#Question 5
+envdata %>% 
+  rename_all(.funs=~paste("cute", ., sep="_"))
+```
 
 
