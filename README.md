@@ -12,3 +12,5 @@ The overarching goals of this tutorial is to fall in love with `dplyr` and to se
 - Simulate a `dplyr` based workflow  
 
 You will learn how to use the key verbs of `dplyr`, including `select()`, `filter()`, `mutate()`, `summarize()`, `rename()`, as well as their generalized `x_at()` and `x_all()` versions. We'll also touch on the `join` family of functions.  
+
+Not only... We do this using a toy dataset based on the cutest wild cats ever!
