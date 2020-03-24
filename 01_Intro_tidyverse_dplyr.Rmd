@@ -174,15 +174,16 @@ Congratulations. You did your first piping. A few features worth noting:
 - `bind_rows()` is a pretty powerful alternative to rbind, which has the desirable properties of binding rows only when these have the same column name (!), which avoids us having to select columns separately for each element of the `dat` list in a loop    
 - For the function `select()` I specified the package because there's a conflict with the `raster::select()` function. When doing spatial analysis, it's more robust to consistently specifiy the package when conflicts may exist  
 - `dplyr` *DOES NOT* need quoting column names (but doesn't mind if you quote either). It may be confusing at first, but it allows to work quicker, and avoids filling up your code with distracting elements.  
+- `filter` subsets the rows we want to keep in a data.frame, based on a (set of) condition(s). Note, again, that the columns we are applying the conditions on *are not* enclosed by quotation marks. 
 \newline
 
-It can be tedious to explicitly specify all the column names to select. `dplyr` is the best friend of lazy people, and provide a quicker way for selecting multiple columns.
+Imagine we wanted to select more columns from each element of the `dat` list, or maybe simply reorder the column order. It can be tedious to explicitly specify all the column names to select. `dplyr` is the best friend of lazy people, and provides many quick alternatives for selecting multiple columns.
 ```{r}
 dat2 <- dat %>% 
   bind_rows() %>% 
   dplyr::select(kingdom:species, year:day, country, decimalLongitude, decimalLatitude, everything())
 ```
-See how we used the function `everything()` to select all the remaining columns (which can be really useful when we are simply changing the order of our columns)
+In the example, we reorder the elements from `dat`. Look how we used the `:` colon sign to indicate *from* `kingdom` *to* `species`. See also how we used the function `everything()` to select all the remaining columns (which is extremely useful in the context of reordering columns columns).
 
 
 
@@ -190,11 +191,11 @@ See how we used the function `everything()` to select all the remaining columns 
 ### Create a map of the data
 We are now ready to plot these points on a map. 
 The map of the worls here derives from the package `rnaturalearth`. Plotting is done using `ggplot` another important member of the `tidyverse`. Spatial data are handled using the `sf` library. All very cool stuff that we don't discuss here.
-```{r, message=F, warning=F}
+```{r, message=F, warning=F, fig.width=7, fig.height=3}
 countries <- ne_countries(returnclass = "sf") %>% 
   st_geometry()
 
-## basic graph of the world in Eckert projection
+## basic graph of the world
 ggplot() +
   geom_sf(data = countries, fill = "grey90", col = NA, lwd = 0.3) +
   geom_point(data=dat_clean, aes(x=Lon, y=Lat, col=species)) +
@@ -202,14 +203,14 @@ ggplot() +
 ```
 \newline
 
-There's a point for the Sand cat which is clearly out of the species native range. We delete it.
+There's a point for the Sand cat which is clearly out of the species native range. We delete it using `filter`.
 ```{r}
 dat_clean <- dat_clean %>% 
   filter(!(species=="Felis margarita" & country=="United States of America"))
 ```
 
 ### Extract predictors from global datasets
-Imagine we are interesting in calculating some metrics related to the environmental niche of the five cute cat species. To do spatial operations, we need to transform our dataset into a `SpatialPointDataFrame()`. 
+Imagine we are interesting in calculating some metrics related to the environmental niche of the five cute cat species. To do spatial operations, we need to transform our dataset into a `SpatialPointDataFrame()`. This is a basic class of objects from the `sp` package, but we don't discuss it here.
 ```{r}
 dat.shp <- SpatialPointsDataFrame(coords=dat_clean %>% 
                                     dplyr::select(Lon, Lat), 
@@ -218,6 +219,9 @@ dat.shp <- SpatialPointsDataFrame(coords=dat_clean %>%
                                   proj4string = CRS("+init=epsg:4326")) #Lat long in WGS 84
                                   
 ```
+See how we nested short pipelines of commands *within* the arguments of the `SpatialPointsDataFrame` function.  
+\newline
+
 We can then download Bioclimatic variables from [CHELSA](http://chelsa-climate.org/bioclim/)  
 We focus on two only:  
 \newline
@@ -225,21 +229,15 @@ We focus on two only:
 Bio1 = Annual Mean Temperature  
 Bio12 = Annual Precipitation  
 
-\newline 
-
 \newline
-Download raster files:
+Download raster files with `downloader`:
 ```{r, message=F, warning=F, eval=F}
 dir.create("Ancillary_data")
 dir.create("Ancillary_data/CHELSA")
-url.chelsa <- list()
-ii <- stringr::str_pad(c(1,12), width=2, side="left", pad="0")
-url.chelsa <- paste("https://envidatrepo.wsl.ch/uploads/chelsa/chelsa_V1/bioclim/integer/CHELSA_bio10_", ii, ".tif", sep="")
-for(i in 1:2){
-  download(url.chelsa[[i]],
-           paste("Ancillary_Data/CHELSA/CHELSA_bio10_", ii[i], ".tif", sep=""), 
-           mode = "wb")
-}
+download(url = "https://envidatrepo.wsl.ch/uploads/chelsa/chelsa_V1/bioclim/integer/CHELSA_bio10_01.tif",
+        "Ancillary_Data/CHELSA/CHELSA_bio10_01.tif", mode = "wb")
+download(url = "https://envidatrepo.wsl.ch/uploads/chelsa/chelsa_V1/bioclim/integer/CHELSA_bio10_12.tif",
+        "Ancillary_Data/CHELSA/CHELSA_bio10_12.tif", mode = "wb")
 ```
 
 Load CHELSA rasters, and intersect `dat.shp` with each of them 
@@ -257,7 +255,7 @@ envdata <- dat_clean %>%
   mutate(P=bio12) %>% 
   mutate(Temp=Temp/10)
 ```
-The function `mutate()` is a fundamental one. It allows creating and modifying a column, and can be used to do operations between columns.  
+The function `mutate()` is a foundation of `dplyr`. It allows creating and/or modifying a column, and can be used to do operations between columns.  
 \newline
 
 Now things get interesting. To calculate the climatic niche we may want to calculate some statistics for each predictor for species (min, max, mean). `dplyr` comes to our help with the function `group_by()` (and its opposite `ungroup()`). Once you group a data.frame by a factor (or character!), all operations are applied on a group by group basis. Easy, quick, efficient. We can then use the function `summarize()`.
@@ -273,7 +271,7 @@ niche <- envdata %>%
             max.P=max(P, na.rm=T))
 ```
 Checkout how we used the function `n()` to count the number of observations for each group!.  
-*TIP* Once you group a `tibble` it stays grouped! Don't forget to ungroup afterwards!  
+!! *watch out* !! Once you group a `tibble` it stays grouped! Don't forget to ungroup afterwards!  
 \newline
 
 How do our cute cats rank in terms of their resistance to maximum temperature? All we have to do is to `arrange()` our rows in a descending order.
@@ -329,10 +327,10 @@ Cool. This is it. Now you know the basics and you can start navigating on your o
 Ready to answer some cute-cat related questions based on our data?  
 \newline
 
-**1) What cute cat has the widest range in term of precipitation?**  
-**2) Which countries host the highest number of different species of cats?**  
-**3) Which species occur in the countries from Q2 (pick up one)?**  
-**3b) BONUS POINT - Can you extract the species for all countries from Q2 within the same pipeline?**  
+**Q1) Which cute cat has the widest range in term of precipitation?**  
+**Q2) Which countries host the highest number of different cat species?**  
+**Q3) Which species occur in these countries? (pick up one)**  
+**Q3b) BONUS POINT - Can you extract the species for all countries from Q2 within the same pipeline?**  
 \newline
 
 OBVIOUSLY - you can only answer these questions using the `dplyr` functions showed so far in *ONE* single pipeline. Data in, data out. You find the solutions at the end of the document.
@@ -353,9 +351,9 @@ envdata.st <- envdata %>%
   mutate(Temp.st=Temp/max.T)
 head(envdata.st)
 ```
-Notice how we nested a pipe within a pipe!
+Two things here. First the `by` argument from `left_join` do want you to quote the key column(s). Second, notice how we nested a pipeline within a pipeline!  
 
-Not everybody knows, you can join an object with itself using the point `.`. In `dplyr` grammar the point `.` sign symbolizes 'itself' and its use is widespread. In the next example we first calculate the maximum temperature, species by species, and then join these summarized values to the `envdata` object
+Not everybody knows, you can join an object with itself using the point `.` sign. In `dplyr` grammar the point `.` sign symbolizes 'itself' and its use is widespread. In the next example we first calculate the maximum temperature, species by species, and then join these summarized values to the `envdata` object itself.
 
 ```{r}
 envdata.st <- envdata %>%
@@ -367,7 +365,7 @@ envdata.st <- envdata %>%
   mutate(Temp.st=Temp/max.T)
 head(envdata.st)
 ```
-Not convinced by the power? Let's see how to do the same in `base`
+Not convinced by the power? Let's see how we would do the same in `base`
 ```{r}
 #calculate max for each species
 Tmax.sp <- tapply(envdata$Temp, envdata$species, "max", na.rm=T)
@@ -395,28 +393,30 @@ niche <- envdata %>%
 niche
 ```
 Awesome! Not only we summarized over both variables, but we also got columns having the correct naming. HOW COOL IS THAT?  
-Spend a minute looking at the syntax of `summarize_at()`. Not exactly simple, with those point `.` and tilde `~` signs. Definitely worth learning, though.  
+Spend a minute looking at the syntax of `summarize_at()`. Not exactly simple, with those point `.` and tilde `~` signs. Definitely worth learning, though. Basically, these functions want two basic arguments.  
+- `.vars` specifies the variables we want to use. Note how we are telling `dplyr` that all elements inside the `var()` function are actually columns.  
+- `.funs` specifies which functions we want to apply to the selected variables. These functions are listed in a `list`, whose elements are then specified as `[name_suffix]=~function(.)`. In this case the `~` sign is telling `dplyr` this is a formula and the `.` sign symbolizes any of the variables listed in `.vars`. 
 \newline
 
 If it's not yet enough, let's look at another application of the `_at` family.  
-Let's say we are doing an analysis on the summarized data, and decided to transform to log all the summarized variables referring to P in `niche`.
+Let's say we are doing an analysis on the summarized data, and decide to log transform all the summarized variables referring to Precipitation in `niche`.
 
 ```{r}
 niche.log <- niche %>% 
   mutate_at(.vars=vars(starts_with("P_")), 
-            .funs=list(~log(.)))
+            .funs=list(~log(.))) 
 niche.log
 ```
-Notice that, not defining new names in the `.funs` argument, we are not overwriting the variables that we selected in the `.vars` argument. The function `starts_with()` (and its companions `ends_with()`, `contain()`), are cool helper functions specifically thought for selecting columns (which means they can also be used when using the `select()` function).  
+Notice that, not defining new names in the `.funs` argument, we are now overwriting the variables that we selected in the `.vars` argument. The function `starts_with()` (and its companions `ends_with()`, `contains()`), are cool helper functions specifically thought for selecting columns (which means they can also be used when using the `select()` function).  
 \newline
 
 ### Your turn (2)
-**4) Attach to the `envdata` object both the short names and picture urls from the object `cute`. Find the cat with the second highest number of occurrences, use the corresponding url to draw its picture, and the short name for the label (see code for plotting)**  
-**5) How can you use the function `rename_all` to add the prefix "cute" to all column names in `envdata`?**  
+**Q4) Attach to the `envdata` object both the short names and picture urls from the object `cute`. Find the cat with the second highest number of occurrences, use the corresponding url to draw its picture, and the short name for the label (see code below for plotting)**  
+**Q5) How can you use the function `rename_all` to add the prefix "cute" to all column names in `envdata`?**  
 \newline
 
 Q4-hint - Check what happens when doing `left_join` first and then `summarize`, or the other way around. Is the result the same?  
-Q5-hint - Take a look at the `summarize_at` example above. If you rename *all* fields, do you really need to specify the argument .vars?  
+Q5-hint - Take a look at the `summarize_at` example above. If you rename *all* fields, will you need to specify the argument `.vars`?  
 ```{r, eval=F}
 ggdraw() + draw_image("myurl") + draw_figure_label("mylabel")
 ```
@@ -456,7 +456,7 @@ dat_clean %>%
   arrange(country)
 ```
 
-```{r}
+```{r, fig.height=4, fig.width=3}
 #Question 4 
 second.most.common <- envdata %>% 
   group_by(species) %>% 
