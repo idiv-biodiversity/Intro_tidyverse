@@ -14,3 +14,7 @@ The overarching goals of this tutorial is to fall in love with `dplyr` and to se
 You will learn how to use the key verbs of `dplyr`, including `select()`, `filter()`, `mutate()`, `summarize()`, `rename()`, as well as their generalized `x_at()` and `x_all()` versions. We'll also touch on the `join` family of functions.  
 
 Not only... We do this using a toy dataset based on the cutest wild cats ever!
+
+Go to the tutorial:
+[html version](https://htmlpreview.github.io/?https://github.com/idiv-biodiversity/Intro_tidyverse/blob/master/01_Intro_tidyverse_dplyr.html)
+[pdf version](https://github.com/idiv-biodiversity/Intro_tidyverse/blob/master/01_Intro_tidyverse_dplyr.pdf)
