@@ -1,11 +1,12 @@
 ---
 title: "Data Wrangling with Dplyr - Cute cats, cute grammar"
 author: "Francesco Maria Sabatini"
-output: html_document
+output: 
+  pdf_document:
+    dev: png
 ---
   
 **Timestamp:** `r date()`  
-**Created:** Francesco Maria Sabatini  
 **Version:** 1.1  
 **License:** CC-BY
 
@@ -18,14 +19,14 @@ The overarching goals of this tutorial is to fall in love with `dplyr` and to se
 - Understand the logic of `dplyr` and the power of piping `%>%`  
 - Explore the key verbs of `dplyr`'s grammar  
 - Simulate a `dplyr` based workflow  
-\newline
 
 You will learn how to use the key verbs of `dplyr`, including `select()`, `filter()`, `mutate()`, `summarize()`, `rename()`, as well as their generalized `x_at()` and `x_all()` versions. We'll also touch on the `join` family of functions.  
 
-\newline
-
 We will first create a simulated dataframe using data from `GBIF` and environmental predictors from some global datasets.  
 We start loading some packages
+
+
+
 
 ```{r results="hide", message=F, warning=F}
 library(tidyverse)
@@ -44,19 +45,7 @@ library(rnaturalearth)
 rasterOptions(tmpdir="_tmp")
 ```
 
-```{r results="hide", message=F, warning=F, echo=F}
-#Hidden packages and options
-## Markdown packages
-library(knitr)
-library(kableExtra)
-knitr::opts_chunk$set(echo = TRUE)
-
-write("TMPDIR = _tmp", file=file.path(Sys.getenv('TMPDIR'), '.Renviron'))
-write("R_USER = _tmp", file=file.path(Sys.getenv('R_USER'), '.Renviron'))
-```
-
-
-### Import species data from `GBIF`
+## Import species data from `GBIF`
 As a toy dataset, we will compare the climatic niche of the five cutest wild cats out there. The selection follows the authoritative source [www.backyardcatenclosures.com.au](https://www.backyardcatenclosures.com.au/blogs/cute-cat/5-cute-wild-cat-breeds).  
 \newline
 
@@ -71,10 +60,15 @@ myspecies <- c("Felis manul", #Palla's cat
                )
 shortnames <- c("Palla's cat", "Caracal", "Sand Cat", "Rusty Spotted Cat", "Margay")
 urls <- c("https://upload.wikimedia.org/wikipedia/commons/d/d6/Manoel.jpg", #pallas
-          "https://upload.wikimedia.org/wikipedia/commons/a/a3/Caracl_%2801%29%2C_Paris%2C_d%C3%A9cembre_2013.jpg", #caracal
-          "https://upload.wikimedia.org/wikipedia/commons/e/e9/Persian_sand_CAT.jpg", #Sand cat
-          "https://upload.wikimedia.org/wikipedia/commons/3/3e/Rusty_spotted_cat_1.jpg", #Rusty spotted cat
-          "https://upload.wikimedia.org/wikipedia/commons/b/bd/Margay_in_Costa_Rica.jpg")
+"https://upload.wikimedia.org/wikipedia/commons/a/a3/Caracl_%2801%29%2C_Paris%2C_d%C3%A9cembre_2013.jpg", 
+  #caracal
+  "https://upload.wikimedia.org/wikipedia/commons/e/e9/Persian_sand_CAT.jpg", 
+  #Sand cat
+  "https://upload.wikimedia.org/wikipedia/commons/3/3e/Rusty_spotted_cat_1.jpg", 
+  #Rusty spotted cat
+  "https://upload.wikimedia.org/wikipedia/commons/b/bd/Margay_in_Costa_Rica.jpg" 
+  #Margay
+)
 
 cute <- data.frame(species=myspecies, 
                    short=shortnames, 
@@ -83,8 +77,7 @@ cute <- data.frame(species=myspecies,
 
 
 
-
-```{r, message=F, echo=F, warning=F}
+```{r, message=F, echo=F, warning=F, dpi = 300}
 library(cowplot)
 library(magick)
 
@@ -104,9 +97,7 @@ plot_grid(
   plot_grid(Sand, Rusty, Margay, nrow=1, rel_heights=c(1,1, 0.5)), 
   nrow=2, rel_heights = c(1, 1.5))
 ```
-\newline 
-
-*All pictures are from https://en.wikipedia.org/*
+*All pictures from https://en.wikipedia.org/*
 \newline  
 
 Download occurrence data from `GBIF`
@@ -122,18 +113,19 @@ dat <- lapply(key, get.100occurrences)
 
 We produce a list of 5 elements, each with up to 100 occurrences for a cat species. Let's take a look at the output:
 
-```{r, echo=F}
-knitr::kable(dat[[1]][1:10,], 
-             caption="Five cutest wild cat species from GBIF (first cat, first 10 rows shown)", digits = 3) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), 
-                full_width = F, position = "center")
+```{r}
+dat[[1]]
 ```
 
-It's pretty horrible, and there's a lot of information we probably do not need. 
-First, notice that each element of the list is a `tibble`, which is the `dplyr` equivalent of a `data.frame`. It has some cool tweaks (try to visualize a tibble in your console) compared to a data.frame. You  should be aware, though, that some functions designed for data.frames may not work with tibbles. Try converting back and forth from data.frame to tbl with the commands `as.data.frame()` and `as.tbl()`.  
-\newline
+First, notice that each element of the list is a `tibble`, which is the `dplyr` equivalent of a `data.frame`. It has some cool tweaks (see how is visualizes in the console) compared to a data.frame. You  should be aware, though, that some functions designed for data.frames may not work with tibbles. You can always convert back and forth from data.frame to tbl with the commands `as.data.frame()` and `as.tbl()`, anyways.  
+Our tibble is pretty horrible, actually. There are 121 columns, and a lot of information we probably do not need. 
 
-### Clean data
+```{r}
+unlist(lapply(dat, "ncol"))
+```
+Also notice how each element of the `dat` list contains a different number of columns, which complicates things. Time for a good data cleaning
+
+## Clean data
 Let's see how `dplyr` can help us to clean up our data into something we can work with:   
 1) bind all rows into a single data.frame  
 2) select the columns we need (species, country, coordinates)  
@@ -150,12 +142,14 @@ Let's compare the code in `base` vs. the code in `dplyr`.
 
 ```{r}
 #base
-#Since each element of the list has a different number of columns, I cannot simply bind them by rows, but I first need to subset them to the same format.
+#Since each element of the list has a different number of columns, 
+#I cannot simply bind them by rows, but I first need to subset them to the same format.
 dat_clean <- NULL
 for(i in 1:5){
   dat_clean <- rbind(dat_clean, 
                      dat[[i]][,which(colnames(dat[[i]]) %in% 
-                                       c("species", "country", "decimalLongitude", "decimalLatitude"))])
+                                       c("species", "country", 
+                                         "decimalLongitude", "decimalLatitude"))])
   }
 dat_clean <- dat_clean[which(!is.na(dat_clean$decimalLatitude) & 
                                !is.na(dat_clean$decimalLongitude)),]
@@ -173,7 +167,8 @@ dat_clean <- dat %>%
   rename(Lon=decimalLongitude, Lat=decimalLatitude)
 head(dat_clean)
 ```
-Shorter, cleaner, easier.  
+*Shorter, cleaner, easier*  
+
 Congratulations. You did your first piping. A few features worth noting:  
 - In the first row, we assign the output to the object `dat_clean` and select `dat` as initial input of our chain of commands. The object `dat` will be fed into the first function (`bind_rows()`). The output from the first function will be fed as first argument in the second function (`select()`) and so on  
 - `bind_rows()` is a pretty powerful alternative to rbind, which has the desirable properties of binding rows only when these have the same column name (!), which avoids us having to select columns separately for each element of the `dat` list in a loop    
@@ -186,17 +181,16 @@ Imagine we wanted to select more columns from each element of the `dat` list, or
 ```{r}
 dat2 <- dat %>% 
   bind_rows() %>% 
-  dplyr::select(kingdom:species, year:day, country, decimalLongitude, decimalLatitude, everything())
+  dplyr::select(kingdom:species, year:day, country, decimalLongitude, 
+                decimalLatitude, everything())
 ```
 In the example, we reorder the elements from `dat`. Look how we used the `:` colon sign to indicate *from* `kingdom` *to* `species`. See also how we used the function `everything()` to select all the remaining columns (which is extremely useful in the context of reordering columns columns).
 
 
-
-
-### Create a map of the data
+## Create a map of the data
 We are now ready to plot these points on a map. 
 The map of the worls here derives from the package `rnaturalearth`. Plotting is done using `ggplot` another important member of the `tidyverse`. Spatial data are handled using the `sf` library. All very cool stuff that we don't discuss here.
-```{r, message=F, warning=F, fig.width=7, fig.height=3}
+```{r, message=F, warning=F, fig.width=7, fig.height=3, dpi=300}
 countries <- ne_countries(returnclass = "sf") %>% 
   st_geometry()
 
@@ -206,7 +200,6 @@ ggplot() +
   geom_point(data=dat_clean, aes(x=Lon, y=Lat, col=species)) +
   theme_bw() 
 ```
-\newline
 
 There's a point for the Sand cat which is clearly out of the species native range. We delete it using `filter`.
 ```{r}
@@ -214,7 +207,7 @@ dat_clean <- dat_clean %>%
   filter(!(species=="Felis margarita" & country=="United States of America"))
 ```
 
-### Extract predictors from global datasets
+## Extract predictors from global datasets
 Imagine we are interesting in calculating some metrics related to the environmental niche of the five cute cat species. To do spatial operations, we need to transform our dataset into a `SpatialPointDataFrame()`. This is a basic class of objects from the `sp` package, but we don't discuss it here.
 ```{r}
 dat.shp <- SpatialPointsDataFrame(coords=dat_clean %>% 
@@ -225,23 +218,22 @@ dat.shp <- SpatialPointsDataFrame(coords=dat_clean %>%
                                   
 ```
 See how we nested short pipelines of commands *within* the arguments of the `SpatialPointsDataFrame` function.  
-\newline
 
 We can then download Bioclimatic variables from [CHELSA](http://chelsa-climate.org/bioclim/)  
 We focus on two only:  
-\newline
-  
+
 Bio1 = Annual Mean Temperature  
 Bio12 = Annual Precipitation  
-
 \newline
+
 Download raster files with `downloader`:
 ```{r, message=F, warning=F, eval=F}
 dir.create("Ancillary_data")
 dir.create("Ancillary_data/CHELSA")
-download(url = "https://envidatrepo.wsl.ch/uploads/chelsa/chelsa_V1/bioclim/integer/CHELSA_bio10_01.tif",
+chelsa.url <- "https://envidatrepo.wsl.ch/uploads/chelsa/chelsa_V1/bioclim/integer/"
+download(url = pasteo(chelsa.url, "CHELSA_bio10_01.tif"),
         "Ancillary_Data/CHELSA/CHELSA_bio10_01.tif", mode = "wb")
-download(url = "https://envidatrepo.wsl.ch/uploads/chelsa/chelsa_V1/bioclim/integer/CHELSA_bio10_12.tif",
+download(url = paste0(chelsa.url, "CHELSA_bio10_12.tif",
         "Ancillary_Data/CHELSA/CHELSA_bio10_12.tif", mode = "wb")
 ```
 
@@ -288,10 +280,8 @@ To sort in ascending order, it's enough to do `arrange(niche, max.T)`.
 \newline
 
 You, fine ecologists, may be unhappy of the unequal sample size in our data. How would the results change if we were using only one randomly selected observations for each species in each country?  
-\newline 
 
-Easy-peasy.  
-\newline 
+Easy-peasy!  
 
 
 All we need to do is to group our data by both species AND country, and then we can take advantage of a bunch of useful commands which subset our dataset by selecting only a set of rows. Check `slice()`, `sample_n()`, `sample_frac()`.
@@ -302,10 +292,8 @@ envdata %>%
   head()
 ```
 `sample_n()` randomly samples n rows for each group. `slice(1:n)` can be used to subset the dataset by row numbers  
-\newline 
 
 Note that many `base` functions useful for checking the shape of your dataset work also inside pipes. Try for instance to add the commands `nrow()`, `ncol()`, `dim()`, `class()`, `str()`, `head()`, `summary()` at the end of your pipe .  
-\newline
 
 Often, you have the need to delete duplicated rows in your dataset. Let's say we want to count the number of countries we have data for, separately for each cute cat. Our best friend is the command `distinct()`
 ```{r}
@@ -317,7 +305,6 @@ ncountries <- envdata %>%
 !! *watch out* !! By using `distinct` you effectively use (and retain) only the information in the column(s) you are using `distinct` on. If you want to retain the information in the other columns, try `distinct(country, .keep_all=T)`.  
 \newline
 
-
 Transforming all your scripts to `dplyr` grammar may be challenging at first. Sometimes you want to extract one column from a dataframe and use it as a vector. You can obviously run your pipe, and then subset the output using the `$` sign, as usual. A real `dplyr` feticist would never do it, though, but rather use `pull()`.  
 Let's say we want to extract the string of countries we have data for (altogehter, this time, not separately by species) 
 ```{r}
@@ -328,24 +315,22 @@ envdata %>%
 Cool. This is it. Now you know the basics and you can start navigating on your own.
 \newline 
 
-### Your turn (1)
+## Your turn (1)
 Ready to answer some cute-cat related questions based on our data?  
-\newline
 
 **Q1) Which cute cat has the widest range in term of precipitation?**  
 **Q2) Which countries host the highest number of different cat species?**  
 **Q3) Which species occur in these countries? (pick up one)**  
 **Q3b) BONUS POINT - Can you extract the species for all countries from Q2 within the same pipeline?**  
-\newline
 
 OBVIOUSLY - you can only answer these questions using the `dplyr` functions showed so far in *ONE* single pipeline. Data in, data out. You find the solutions at the end of the document.
 
 
 
-### Slighlty more advanced stuff
+## Slighlty more advanced stuff
 The power of `dplyr` is that you can really make your data management workflow more general, by writing your code more programmatically. We are only touching this argument here, but I want to introduce you to two cool families of functions.
 
-#### *Joins*  
+### *Joins*  
 Often, we need to join information based on two or more data.frames, based on a common field. `dplyr` has the whole family of join functions which we can use: `left_join()`, `right_join()`, `full_join()`, `inner_join()`. Here I just show one simple application.  
 Let's say we want to standardize the Temperature values of each individual observation, by the maximum Temperature we calculated for each cute cat species. Basically, we need to join our `envdata` object with our `niche` object, using `species` as key.
 ```{r}
@@ -381,9 +366,8 @@ envdata2$Temp.st <- envdata2$Temp/envdata2$max.T
 head(envdata2)
 ```
 Three versions for the same task. Which one is easier to read?  
-\newline
 
-#### *`_at` & `_all` family*  
+### *`_at` & `_all` family*  
 All basic functions in `dplyr` have an `x_at()` and an `x_all()` version. This helps **enormously** to script in a more general and programmatical fashion.  
 Remember when we summarized temperature and precipitation to get min, mean and max? Actually, our code had some redundancy that a `dplyr` would never accept, since we needed to specify the same functions for each of the variables we wanted to calculate those functions on. Imagine we have to calculate summaries for all the 18 bioclim variables in Chelsa. Should we repeat the functions we want 18 times?  
 NO!!  
@@ -415,7 +399,7 @@ niche.log
 Notice that, not defining new names in the `.funs` argument, we are now overwriting the variables that we selected in the `.vars` argument. The function `starts_with()` (and its companions `ends_with()`, `contains()`), are cool helper functions specifically thought for selecting columns (which means they can also be used when using the `select()` function).  
 \newline
 
-### Your turn (2)
+## Your turn (2)
 **Q4) Attach to the `envdata` object both the short names and picture urls from the object `cute`. Find the cat with the second highest number of occurrences, use the corresponding url to draw its picture, and the short name for the label (see code below for plotting)**  
 **Q5) How can you use the function `rename_all` to add the prefix "cute" to all column names in `envdata`?**  
 \newline
@@ -430,9 +414,9 @@ ggdraw() + draw_image("myurl") + draw_figure_label("mylabel")
 
 
 Enough for today. We only scratched the surface here, but I'm sure you saw the huge potential for writing quicker and cleaner code compared to `base R`. Now you know the power of `dplyr`. Will you be able to harness it?
-
 \newpage
-### Solutions
+
+## Solutions
 ```{r}
 #Question 1
 niche %>% 
@@ -461,7 +445,7 @@ dat_clean %>%
   arrange(country)
 ```
 
-```{r, fig.height=4, fig.width=3}
+```{r, fig.height=3, fig.width=3, dpi=300}
 #Question 4 
 second.most.common <- envdata %>% 
   group_by(species) %>% 
@@ -480,5 +464,9 @@ ggdraw() +
 envdata %>% 
   rename_all(.funs=~paste("cute", ., sep="_"))
 ```
+
+
+
+
 
 
