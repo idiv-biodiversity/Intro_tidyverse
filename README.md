@@ -15,6 +15,6 @@ You will learn how to use the key verbs of `dplyr`, including `select()`, `filte
 
 Not only... We do this using a toy dataset based on the cutest wild cats ever!  
 
-Go to the tutorial:
+Go to the tutorial:  
 [html version](https://htmlpreview.github.io/?https://github.com/idiv-biodiversity/Intro_tidyverse/blob/master/01_Intro_tidyverse_dplyr.html)  
 [pdf version](https://github.com/idiv-biodiversity/Intro_tidyverse/blob/master/01_Intro_tidyverse_dplyr.pdf)
