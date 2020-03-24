@@ -5,7 +5,6 @@ This tutorial will guide you through the basic grammar and functions of `dplyr` 
   
 Knowing that data analysis is an iterative process, learning how to write **synthetic, fast and easy to read** code in`dplyr` is the best present you can give your *future self*. 
 `dplyr`'s grammar is easy to write, explain, revise and mantain. It will help you save a *lot* of time later
-\newline 
 
 The overarching goals of this tutorial is to fall in love with `dplyr` and to see some cute wild cats. The specific goals are:  
 - Understand the logic of `dplyr` and the power of piping `%>%`  
