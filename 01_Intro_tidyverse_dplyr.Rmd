@@ -1,7 +1,8 @@
 ---
-title: "Data Wrangling with Dplyr - Cute cats, cute grammar"
+title: "Data Wrangling with dplyr - Cute cats, cute grammar"
 author: "Francesco Maria Sabatini"
-output: 
+output:
+  html_document:
   pdf_document:
     dev: png
 ---
