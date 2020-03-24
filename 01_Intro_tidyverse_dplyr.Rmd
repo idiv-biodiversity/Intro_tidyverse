@@ -1,18 +1,17 @@
 ---
-title: "Introduction to tidyverse - A new grammar"
+title: "Data Wrangling with Dplyr - Cute cats, cute grammar"
 author: "Francesco Maria Sabatini"
-date: "3/22/2020"
 output: html_document
 ---
   
 **Timestamp:** `r date()`  
-**Drafted:** Francesco Maria Sabatini  
-**Revised:**  
-**version:** 1.0
+**Created:** Francesco Maria Sabatini  
+**Version:** 1.1  
+**License:** CC-BY
 
-`tidyverse` is a a collection of R packages designed for data science. All packages share an underlying design philosophy, grammar, and data structures. Working in the `tidyverse` requires a basic understanding of `dplyr`, 
-a package which provides a set of tools for efficiently manipulating datasets in R.  
-What I personally love is that `dplyr` is **synthetic, fast and easy to read**. It allows to write code which is easy to explain, revise and mantain. Knowing that whather analysis we do, we will probably have to adjust and re-run it over and over, using `dplyr`'s grammar now is the best present we can give to our *future selves*, since it will help us save a *lot* of time later.  
+`dplyr` provides a set of tools for efficiently manipulating datasets in `R`. It belongs to the `tidyverse`, which is a a collection of R packages designed for data science. All packages share an underlying design philosophy, grammar, and data structures.  
+  
+What I personally love is that `dplyr` is **synthetic, fast and easy to read**. It allows to write code which is easy to explain, revise and mantain. Knowing that whather analysis we do, we will probably have to adjust and re-run it over and over, using `dplyr`'s grammar now is the best present we can give to our *future selves*, and will help us save a *lot* of time later.  
 \newline 
 
 The overarching goals of this tutorial is to fall in love with `dplyr` and to see some cute wild cats. The specific goals are:  
@@ -25,31 +24,37 @@ You will learn how to use the key verbs of `dplyr`, including `select()`, `filte
 
 \newline
 
-We will first create a simulated dataframe using data from `GBIF` and environmental predictors from some global datasets.
+We will first create a simulated dataframe using data from `GBIF` and environmental predictors from some global datasets.  
+We start loading some packages
 
 ```{r results="hide", message=F, warning=F}
 library(tidyverse)
 library(downloader)
 library(rgbif)
 
-## Markdown packages
-library(knitr)
-library(kableExtra)
-knitr::opts_chunk$set(echo = TRUE)
 ## Spatial packages
-#install.packages(c("rgdal", "sp", "sf", "rgeos", "raster", "rnaturalearth"))
+#install.packages(c("rgdal", "sp", "sf", "raster", "rnaturalearth"))
 library(rgdal)
 library(sp)
 library(sf)
-library(rgeos)
 library(raster)
 library(rnaturalearth)
 
 #save temporary files
-write("TMPDIR = _tmp", file=file.path(Sys.getenv('TMPDIR'), '.Renviron'))
-write("R_USER = _tmp", file=file.path(Sys.getenv('R_USER'), '.Renviron'))
 rasterOptions(tmpdir="_tmp")
 ```
+
+```{r results="hide", message=F, warning=F, echo=F}
+#Hidden packages and options
+## Markdown packages
+library(knitr)
+library(kableExtra)
+knitr::opts_chunk$set(echo = TRUE)
+
+write("TMPDIR = _tmp", file=file.path(Sys.getenv('TMPDIR'), '.Renviron'))
+write("R_USER = _tmp", file=file.path(Sys.getenv('R_USER'), '.Renviron'))
+```
+
 
 ### Import species data from `GBIF`
 As a toy dataset, we will compare the climatic niche of the five cutest wild cats out there. The selection follows the authoritative source [www.backyardcatenclosures.com.au](https://www.backyardcatenclosures.com.au/blogs/cute-cat/5-cute-wild-cat-breeds).  
