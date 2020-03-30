@@ -30,17 +30,21 @@ We start loading some packages
 
 
 ```{r results="hide", message=F, warning=F}
+#install.packages(c("tidyverse", "downloader", "rgbif", "rgdal", "sp", "sf", "raster", "rnaturalearth", "cowplot", "magick"))
 library(tidyverse)
 library(downloader)
 library(rgbif)
 
 ## Spatial packages
-#install.packages(c("rgdal", "sp", "sf", "raster", "rnaturalearth"))
 library(rgdal)
 library(sp)
 library(sf)
 library(raster)
 library(rnaturalearth)
+
+## Plotting packages
+library(cowplot)
+library(magick)
 
 #save temporary files
 rasterOptions(tmpdir="_tmp")
@@ -79,9 +83,6 @@ cute <- data.frame(species=myspecies,
 
 
 ```{r, message=F, echo=F, warning=F, dpi = 300}
-library(cowplot)
-library(magick)
-
 Pallas <- ggdraw() + draw_image(urls[1], scale = 0.9) + 
   draw_figure_label(label = "Palla's cat")
 Caracal <- ggdraw() + draw_image(urls[2], scale = 0.9) + 
