@@ -3,6 +3,7 @@ title: "Data Wrangling with dplyr - Cute cats, cute grammar"
 author: "Francesco Maria Sabatini"
 output:
   html_document:
+    keep_md: true
   pdf_document:
     dev: png
 ---
