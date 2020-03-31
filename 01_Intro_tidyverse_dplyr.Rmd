@@ -234,10 +234,10 @@ Download raster files with `downloader`:
 dir.create("Ancillary_data")
 dir.create("Ancillary_data/CHELSA")
 chelsa.url <- "https://envidatrepo.wsl.ch/uploads/chelsa/chelsa_V1/bioclim/integer/"
-download(url = pasteo(chelsa.url, "CHELSA_bio10_01.tif"),
-        "Ancillary_Data/CHELSA/CHELSA_bio10_01.tif", mode = "wb")
+download(url = paste0(chelsa.url, "CHELSA_bio10_01.tif"),
+        "Ancillary_Data/CHELSA/CHELSA_bio10_01.tif", mode = "wb"))
 download(url = paste0(chelsa.url, "CHELSA_bio10_12.tif",
-        "Ancillary_Data/CHELSA/CHELSA_bio10_12.tif", mode = "wb")
+        "Ancillary_Data/CHELSA/CHELSA_bio10_12.tif", mode = "wb"))
 ```
 
 Load CHELSA rasters, and intersect `dat.shp` with each of them 

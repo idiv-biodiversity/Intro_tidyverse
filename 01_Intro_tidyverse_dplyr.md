@@ -8,7 +8,7 @@ output:
     dev: png
 ---
   
-**Timestamp:** Mon Mar 30 11:17:54 2020  
+**Timestamp:** Tue Mar 31 13:59:48 2020  
 **Version:** 1.1  
 **License:** CC-BY
 
@@ -306,10 +306,10 @@ Download raster files with `downloader`:
 dir.create("Ancillary_data")
 dir.create("Ancillary_data/CHELSA")
 chelsa.url <- "https://envidatrepo.wsl.ch/uploads/chelsa/chelsa_V1/bioclim/integer/"
-download(url = pasteo(chelsa.url, "CHELSA_bio10_01.tif"),
-        "Ancillary_Data/CHELSA/CHELSA_bio10_01.tif", mode = "wb")
+download(url = paste0(chelsa.url, "CHELSA_bio10_01.tif"),
+        "Ancillary_Data/CHELSA/CHELSA_bio10_01.tif", mode = "wb"))
 download(url = paste0(chelsa.url, "CHELSA_bio10_12.tif",
-        "Ancillary_Data/CHELSA/CHELSA_bio10_12.tif", mode = "wb")
+        "Ancillary_Data/CHELSA/CHELSA_bio10_12.tif", mode = "wb"))
 ```
 
 Load CHELSA rasters, and intersect `dat.shp` with each of them 
@@ -388,11 +388,11 @@ envdata %>%
 ## # Groups:   species, country [6]
 ##   species         country        Lon    Lat  Temp     P
 ##   <chr>           <chr>        <dbl>  <dbl> <dbl> <dbl>
-## 1 Caracal caracal Benin         2.40  11.9   28.8   764
+## 1 Caracal caracal Benin         2.49  11.9   28.6   757
 ## 2 Caracal caracal Burkina Faso  2.03  12.0   28.5   784
 ## 3 Caracal caracal Chad         19.8   10.8   26.9   874
 ## 4 Caracal caracal Eswatini     31.2  -26.4   16.9  1151
-## 5 Caracal caracal Kenya        40.0   -3.25  26.3  1011
+## 5 Caracal caracal Kenya        39.9   -3.32  26.6   955
 ## 6 Caracal caracal Namibia      15.9  -19.4   22.6   386
 ```
 `sample_n()` randomly samples n rows for each group. `slice(1:n)` can be used to subset the dataset by row numbers  
